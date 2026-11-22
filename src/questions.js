@@ -1,0 +1,10 @@
+// Prototype questions — provisional examples, not yet reconciled with the original exam file.
+export const questions = [
+ {id:1,topic:"SPOK",q:"Kalimat manakah yang memiliki susunan Subjek–Predikat–Objek–Keterangan (SPOK)?",opts:["Ibu memasak nasi di dapur.","Adik tidur.","Bunga itu sangat indah.","Mereka berlari."],answer:0,why:"Ibu (Subjek), memasak (Predikat), nasi (Objek), di dapur (Keterangan)."},
+ {id:2,topic:"Kata",q:"Kata yang memiliki makna lebih dari satu, bergantung pada konteks, disebut …",opts:["Sinonim","Homograf","Antonim","Kata ulang"],answer:1,why:"Homograf adalah kata yang memiliki ejaan sama, tetapi makna atau pelafalannya dapat berbeda."},
+ {id:3,topic:"Paragraf",q:"Paragraf yang gagasan utamanya berada di awal paragraf disebut paragraf …",opts:["Induktif","Deduktif","Naratif","Deskriptif"],answer:1,why:"Paragraf deduktif menempatkan gagasan utama di awal, lalu diikuti penjelasan."},
+ {id:4,topic:"Kalimat",q:"Manakah contoh kalimat majemuk yang menghubungkan dua kegiatan?",opts:["Rani membaca buku.","Rani membaca buku dan Dika menulis cerita.","Buku Rani tebal.","Dika sangat rajin."],answer:1,why:"Pilihan ini menggabungkan dua klausa/kegiatan: Rani membaca buku dan Dika menulis cerita."},
+ {id:5,topic:"Imbuhan",q:"Kata dasar 'main' yang mendapat imbuhan ber- menjadi …",opts:["memainkan","bermain","mainan","pemain"],answer:1,why:"Imbuhan ber- pada kata main membentuk kata bermain."},
+ {id:6,topic:"Gaya bahasa",q:"Kalimat 'Angin berbisik di telingaku' menggunakan majas …",opts:["Hiperbola","Personifikasi","Metafora","Ironi"],answer:1,why:"Personifikasi memberi sifat atau tindakan manusia kepada benda atau alam."},
+ {id:7,topic:"Ide pokok",q:"Apa yang paling tepat disebut ide pokok dalam sebuah paragraf?",opts:["Kalimat yang paling panjang","Gagasan utama yang dibahas dalam paragraf","Kata sulit yang muncul","Contoh tambahan dalam paragraf"],answer:1,why:"Ide pokok adalah gagasan utama yang menjadi inti pembahasan paragraf."}
+];

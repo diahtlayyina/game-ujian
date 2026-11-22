@@ -1,51 +1,41 @@
 # Implementation state / handoff checkpoint
 
-Update this document after each meaningful session. New AI/developer should read README, this file, and relevant docs before continuing. Record verified facts only.
+Updated: 2026-11-22
 
-## Last updated
-2026-11-22
+## Phase
+Phase 1 prototype started. Static frontend files are committed; gameplay is implemented in a first playable prototype.
 
-## Current phase
-Phase 0 setup / Phase 1 content blueprint. No application code yet.
-
-## Verified facts
-- GitHub repository: `diahtlayyina/game-ujian`
+## Verified repository
+- GitHub repo: diahtlayyina/game-ujian
 - URL: https://github.com/diahtlayyina/game-ujian
-- Default branch: `main`
-- Repository is public (confirmed)
-- Firebase project `Game Ujian` exists and Authentication is enabled (user-reported, not independently verified)
-- Current technical direction: plain HTML/CSS/JS, GitHub, Vercel Hobby, optional Supabase Free
-- Firebase is no longer required for MVP
-- Exam source previously accessed: `ASAS Bahasa Indonesia Kls 4.docx.pdf`; verify exact text, answer keys, and explanations before game implementation
+- Default branch: main
+- Public repository
+- GitHub connection active during development
 
-## Completed
-- [x] Initial project docs committed
-- [x] Simplified stack decision documented
-- [x] Vercel and optional Supabase plan documented
-- [x] Login removed from MVP
+## Stack
+Plain HTML/CSS/JavaScript modules; GitHub; Vercel hosting (connection not yet confirmed in current Composio session); optional Supabase (connection not yet confirmed in current Composio session).
 
-## Next actions
-1. Verify all source questions, answer keys, and explanations
-2. Categorize by topic/difficulty/type
-3. Balance questions across five regions
-4. Finalize game scoring/rewards and interaction rules
-5. Build static frontend prototype
-6. Connect repo to Vercel and test deployment
-7. Add Supabase only if account/cloud save/leaderboard are needed
+## Prototype v0.1
+- Start screen, nickname/avatar setup, five-region map.
+- Grammar Village has 7 playable provisional questions.
+- Single-select choices, immediate feedback/explanation, score (100 per correct), generated sound toggle.
+- Browser localStorage progress and basic reset.
+- Result page and answer review.
+- No authentication, remote database, leaderboard, or analytics.
 
-## Not implemented
-- Game UI and gameplay
-- Question pack verification
-- Audio and rewards
-- Local save logic
-- Vercel deployment
-- Supabase Auth/database
-- Leaderboard
-- Tests
+## Content caveat
+Questions in src/questions.js are authored sample items and are NOT verified against the original exam bank. Review the source question wording, answer keys and explanations before classroom use.
 
-## Handoff notes
-- Start from this file and README.
-- Do not assume Firebase is configured or use it in code unless decision changes.
-- Guest nickname/local save is the first implementation target.
-- Never put passwords, service keys, or student PII in repository.
-- Update this file with changed files, tests, commits, and blockers after every session.
+## Known limitations / next
+1. Review and replace provisional questions with source-verified items.
+2. Improve UX: map re-entry, progress tracking/stars, keyboard/accessibility and mobile QA.
+3. Verify game behavior in browsers and deploy to Vercel.
+4. Confirm Vercel and Supabase connections before using them.
+5. Add online leaderboard only after database schema, security/RLS and server-side score validation are designed.
+6. Supabase must not expose service-role keys in browser or GitHub.
+
+## Prototype code
+- index.html
+- styles.css
+- src/main.js
+- src/questions.js
