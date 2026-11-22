@@ -3,39 +3,45 @@
 Updated: 2026-11-22
 
 ## Phase
-Phase 1 prototype started. Static frontend files are committed; gameplay is implemented in a first playable prototype.
+Prototype v0.1 exists in the repository. Supabase foundation schema is now deployed and verified. Vercel project linking is blocked by a permissions error; no deployment URL exists yet.
 
-## Verified repository
-- GitHub repo: diahtlayyina/game-ujian
-- URL: https://github.com/diahtlayyina/game-ujian
+## Repository
+- GitHub: https://github.com/diahtlayyina/game-ujian
 - Default branch: main
-- Public repository
-- GitHub connection active during development
-
-## Stack
-Plain HTML/CSS/JavaScript modules; GitHub; Vercel hosting (connection not yet confirmed in current Composio session); optional Supabase (connection not yet confirmed in current Composio session).
 
 ## Prototype v0.1
-- Start screen, nickname/avatar setup, five-region map.
-- Grammar Village has 7 playable provisional questions.
-- Single-select choices, immediate feedback/explanation, score (100 per correct), generated sound toggle.
-- Browser localStorage progress and basic reset.
-- Result page and answer review.
-- No authentication, remote database, leaderboard, or analytics.
+- Opening screen, nickname/avatar setup, five-region map (only Grammar Village playable)
+- 7 provisional Bahasa Indonesia multiple-choice questions
+- Feedback, explanation, score, sound toggle, localStorage progress, result/review, reset
+- Static HTML/CSS/JS modules; no build dependencies
+- Code has not been browser/runtime QA verified in this environment
 
-## Content caveat
-Questions in src/questions.js are authored sample items and are NOT verified against the original exam bank. Review the source question wording, answer keys and explanations before classroom use.
+## Supabase
+- Connected project ref: qfccpriurdvjacqvzovu
+- Status: ACTIVE_HEALTHY
+- Migration applied: treasure_quiz_initial_schema
+- Tables created and verified:
+  - public.players
+  - public.game_sessions
+  - public.question_attempts
+- RLS enabled on all three tables. No public policies intentionally created yet; tables remain closed to public client access until trusted write/read rules or backend functions are designed.
+- Generated database TypeScript types successfully.
+- Security advisor reports RLS enabled without policies (expected while tables are intentionally locked down).
+- Performance advisor reports an unindexed FK on game_sessions.player_id and indexes currently unused (early-stage database, not yet workload-tested).
 
-## Known limitations / next
-1. Review and replace provisional questions with source-verified items.
-2. Improve UX: map re-entry, progress tracking/stars, keyboard/accessibility and mobile QA.
-3. Verify game behavior in browsers and deploy to Vercel.
-4. Confirm Vercel and Supabase connections before using them.
-5. Add online leaderboard only after database schema, security/RLS and server-side score validation are designed.
-6. Supabase must not expose service-role keys in browser or GitHub.
+## Vercel
+- Connection: ACTIVE
+- Team context discovered: Diah Layyina (Hobby)
+- Git repository linking/create-project attempted for diahtlayyina/game-ujian, but Vercel returned HTTP 403 Forbidden: insufficient permission to create the project.
+- No project created and no deployment URL confirmed.
+- No CLI fallback was available through the connected tools. Do not retry unchanged or claim deployment is complete.
 
-## Prototype code
-- index.html
-- styles.css
-- src/main.js
-- src/questions.js
+## Important content caveat
+The current question set in src/questions.js is provisional sample content. It must be checked against the original ASAS Bahasa Indonesia source and answer key before classroom assessment use.
+
+## Next steps
+1. Resolve Vercel project-create permission (or link/create the project manually in Vercel dashboard, then reconnect).
+2. Deploy preview and perform browser QA across desktop/mobile.
+3. Verify the 35 original assessment questions and answer keys.
+4. Implement trusted score persistence and leaderboard API/RPC with server-side validation; do not expose service-role keys in browser code.
+5. Add authentication only after guest flow and backend persistence are stable.
