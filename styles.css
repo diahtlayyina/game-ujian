@@ -63,3 +63,28 @@
   .hero{padding:16px 20px;min-height:0}
   .hero h1{font-size:2.2rem}
 }
+/* Journey-map polish: terrain bands, waypoint markers and readable mobile progression */
+.map{background:linear-gradient(135deg,#a8cfb5 0%,#d9e1b3 24%,#9bd4d2 48%,#c7d8ae 70%,#e4d3a2 100%);isolation:isolate}
+.map:after{content:"";position:absolute;inset:36px 8px 8px;z-index:0;pointer-events:none;opacity:.32;background-image:radial-gradient(#547b55 1.4px,transparent 1.7px);background-size:16px 16px;border-radius:20px}
+.region{backdrop-filter:blur(2px);border-color:#c3ad70}
+.region.active{outline:2px solid #fff4be;outline-offset:2px}
+.region.active:before{content:"✦ WAYPOINT";position:absolute;top:7px;right:8px;font-size:.55rem;font-weight:900;letter-spacing:.08em;color:#9a762b;opacity:.8}
+.region.locked:before{content:"SEALED";position:absolute;top:8px;right:9px;font-size:.55rem;font-weight:900;letter-spacing:.1em;color:#64726d}
+.region:nth-child(1){background:linear-gradient(145deg,#fff4d2,#e8d6aa)}
+.region:nth-child(2){background:linear-gradient(145deg,#dff0d5,#b7d4a7)}
+.region:nth-child(3){background:linear-gradient(145deg,#dff7f5,#b2e0dd)}
+.region:nth-child(4){background:linear-gradient(145deg,#eee6d3,#cbbfa5)}
+.region:nth-child(5){background:linear-gradient(145deg,#fff0bf,#e6c96e)}
+.region.active .icon{animation:waypointPulse 2.2s ease-in-out infinite}
+@keyframes waypointPulse{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-3px) scale(1.04)}}
+@media(max-width:700px){
+ .map{background:linear-gradient(180deg,#b6d8b7 0%,#d7e4b6 22%,#a6d9d4 48%,#c5d8ae 70%,#e1d2a3 100%);padding-bottom:18px}
+ .map:after{inset:42px 10px 10px;opacity:.3;background-size:14px 14px}
+ .region{min-height:116px;max-width:360px;box-shadow:0 4px 0 #b9a36c,0 6px 16px #3b573a22}
+ .region.active{outline-offset:1px}
+ .region.active:before,.region.locked:before{top:8px;right:9px}
+ .region:nth-child(odd){margin-left:0;margin-right:auto}
+ .region:nth-child(even){margin-left:auto;margin-right:0}
+ .region:last-child{width:100%;max-width:100%;grid-column:auto}
+}
+@media(prefers-reduced-motion:reduce){.region.active .icon{animation:none}}
