@@ -1,76 +1,67 @@
 # Development Roadmap
 
-## Phase 0 — Project and service setup (current)
-- [x] Repository exists and is accessible
-- [ ] Firebase project settings reviewed and web app registered
-- [ ] Authentication provider decisions/configuration
-- [ ] Firestore database created
-- [ ] Rules drafted and tested (never launch with test mode)
-- [ ] Hosting ready
+## Phase 0 — Simplified setup (current)
+- [x] GitHub repo and project docs
+- [x] Simplify technology stack to static web first
+- [ ] Confirm Vercel account/project connection
+- [ ] Create Supabase project only if cloud save/login is needed
 
-## Phase 1 — Content and design blueprint
-- [ ] Extract/verify all 35 source questions, keys, and explanations
-- [ ] Classify content, difficulty, answer type, and points
-- [ ] Balance five regions and their unlock/reward conditions
-- [ ] Confirm scoring and interaction rules
-- [ ] Wireframes for start, map, question, feedback, and summary
+## Phase 1 — Content blueprint
+- [ ] Re-verify all 35 source questions, keys, and explanations
+- [ ] Categorize topic, difficulty, and interaction type
+- [ ] Balance five regions and question progression
+- [ ] Confirm scoring and rewards
 
-## Phase 2 — Frontend prototype (no backend)
-- [ ] Scaffold Vite + vanilla JavaScript modules
-- [ ] Start screen and player nickname
-- [ ] Map with five regions and locked/unlocked state
-- [ ] Question rendering and answer selection
-- [ ] Multi-select confirmation
-- [ ] Short-answer input and human-friendly normalization
-- [ ] Supportive feedback and explanations
-- [ ] Progress, points, streak, rewards, end screen
-- [ ] Sound effects with mute toggle
-- [ ] Responsive layout and accessibility pass
-- [ ] Local test content and review-wrong-answers flow
+## Phase 2 — Static frontend prototype
+- [ ] Plain HTML/CSS/JS scaffold
+- [ ] Start screen and nickname/avatar
+- [ ] Treasure map and five region progression
+- [ ] Single choice, multi-select, short answer, guided essay
+- [ ] Immediate feedback and explanations
+- [ ] Points, stars, streak, collectibles, progress
+- [ ] Sound effects + mute
+- [ ] Review incorrect answers and end summary
+- [ ] Responsive/accessibility checks
+- [ ] Local guest save via localStorage
 
-## Phase 3 — GitHub collaboration and quality
-- [ ] Commit app scaffold and documentation
-- [ ] Add issue templates/checklist for bugs and features
-- [ ] Add automated lint/build checks
-- [ ] Keep project state updated in `docs/IMPLEMENTATION_STATE.md`
+## Phase 3 — GitHub and Vercel
+- [ ] Commit prototype
+- [ ] Connect GitHub repo to Vercel
+- [ ] Deploy preview and test on multiple devices
+- [ ] Public deployment review for exam content/privacy
 
-## Phase 4 — Firebase integration
-- [ ] Add Firebase web SDK and environment configuration
-- [ ] Anonymous/guest authentication (optional identity, avoid unnecessary PII)
-- [ ] Google sign-in (optional, with consent and domain setup)
-- [ ] Firestore user profile and session model
-- [ ] Save progress and best score
-- [ ] Security Rules and validation
-- [ ] Test rules in Emulator Suite
+## Phase 4 — Optional Supabase backend
+- [ ] Create Free project
+- [ ] Enable Auth only if accounts are useful
+- [ ] Design schema for profiles, progress, sessions
+- [ ] Implement Row Level Security and test policies
+- [ ] Add account creation/sign-in and guest upgrade path if feasible
+- [ ] Persist progress and score safely
 
 ## Phase 5 — Leaderboard
-- [ ] Define ranking policy (best score, XP, or season)
-- [ ] Nickname-only public display
-- [ ] Server-side validation/controlled score writes; don't trust client-provided score fields
-- [ ] Pagination and tie-break policy
-- [ ] Abuse/privacy review
+- [ ] Decide leaderboard scope and ranking criteria
+- [ ] Nickname-only public display; no email/full name
+- [ ] Trusted score validation before ranking
+- [ ] Pagination, tie rules, opt-out/privacy review
 
-## Phase 6 — Deploy and pilot
-- [ ] Firebase Hosting deployment
-- [ ] Test on phone/tablet/laptop and supported browsers
-- [ ] Accessibility, performance, and privacy checks
-- [ ] Pilot with a small group; gather feedback
-- [ ] Fix bugs before wider sharing
+## Phase 6 — Release
+- [ ] Test browser compatibility and performance
+- [ ] Privacy/security review
+- [ ] Deploy final Vercel URL
+- [ ] Pilot with small group and collect feedback
 
-## Phase 7 — Post-MVP
-- [ ] Teacher dashboard and question bank editor
-- [ ] Class/session mode
-- [ ] Additional subjects and reusable content packs
-- [ ] Multiplayer/room challenge (only after core stability)
-- [ ] Seasonal badges and achievements
+## Phase 7 — Later ideas
+- [ ] Teacher dashboard and question-pack editor
+- [ ] Other subjects/grades
+- [ ] Class challenge
+- [ ] Multiplayer only if core game remains lightweight
 
-## Definition of done for MVP
-- All question types work and content is verified
-- No dead-end navigation; restart/retry works
-- Feedback is understandable and encouraging
-- Score and progress are consistent
+## MVP completion criteria
+- Questions and keys verified against source
+- Every question type works
+- Feedback/explanations and retry are clear
+- Score and progression consistent
 - Sound can be muted
-- Responsive and keyboard-usable
-- No personal data unnecessarily exposed
-- Security rules are tested; no public score manipulation
-- Deployment URL loads over HTTPS
+- Responsive and keyboard-friendly
+- No unnecessary personal data
+- Deployed URL works over HTTPS

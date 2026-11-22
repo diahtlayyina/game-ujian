@@ -1,49 +1,46 @@
-# Technical architecture (proposed)
+# Lightweight technical architecture
 
-## Stack
-- Vite + vanilla JavaScript (ES modules) for a lightweight browser game
-- Firebase JavaScript SDK
-- Firebase Authentication: anonymous/guest first; Google sign-in optional
-- Cloud Firestore: player profile, game sessions, progress, leaderboard data
-- Firebase Hosting: HTTPS static web hosting
-- GitHub: version control, documentation, issue tracking
+## Stack (current decision)
+- Plain HTML, CSS, and JavaScript (ES modules); no framework for the first prototype
+- GitHub repository for code and static question packs
+- Vercel Hobby for deployment (check plan restrictions, especially personal/non-commercial use)
+- Supabase Free as an optional backend: Auth + PostgreSQL + APIs
 
-## Stage strategy
-1. Build the game loop offline/local first, with no Firebase dependency.
-2. Keep content and game logic separate from rendering.
-3. Introduce Firebase behind small service modules after prototype behavior stabilizes.
-4. Use Firebase Emulator Suite to test Authentication, Firestore, and Rules locally.
-5. Deploy only after Rules and score validation are reviewed.
+## Stages
+1. Build an entirely static/local prototype. The game must run without a database.
+2. Guest identity and progress initially live in browser localStorage; clearly explain that this is browser/device-local and can be lost.
+3. If cross-device progress and rankings are wanted, integrate Supabase Auth and database tables.
+4. Use Supabase Row Level Security; never expose service-role keys in client code.
+5. Deploy through Vercel connected to GitHub; preview deployments for changes and production deployment from main.
 
-## Suggested modules
-- `src/main.js`: app entry point
-- `src/ui/`: screen rendering, components, transitions
-- `src/game/`: state, scoring, progression, answer evaluation
-- `src/data/`: question packs and region metadata
-- `src/audio/`: sound manager and mute preference
-- `src/services/firebase.js`: Firebase initialization
-- `src/services/auth.js`: guest/Google sign-in flows
-- `src/services/progress.js`: progress/session persistence
-- `src/services/leaderboard.js`: ranking queries (later)
+## Suggested file structure
+- `index.html`: app shell
+- `css/styles.css`: visual styling and responsive rules
+- `js/main.js`: routing/screen coordination
+- `js/game-state.js`: state and progression
+- `js/questions.js` or `data/questions.json`: content pack
+- `js/scoring.js`: answer evaluation and points
+- `js/audio.js`: sound controls
+- `js/storage.js`: localStorage persistence
+- `js/ui/`: reusable rendering modules, only as needed
+- `supabase/`: SQL schema and policies, introduced in backend phase
 
-## Data model (draft; revise before rules)
-- `users/{uid}`: nickname, avatarId, createdAt, privacy settings (minimal)
-- `gamePacks/{packId}`: metadata; question bank should be versioned/static or carefully controlled
-- `sessions/{sessionId}`: uid, packId, questionPackVersion, score, accuracy, completion status, timestamps; avoid copying sensitive profile data
-- `progress/{uid_packId}`: unlocked regions, best scores, collected rewards, updatedAt
-- leaderboard: prefer server-validated aggregates or a callable backend; never accept arbitrary score totals from client writes
+## Future Supabase tables (draft)
+- `profiles`: user ID, nickname, avatar, created_at (minimal data)
+- `game_sessions`: user_id, pack_id/version, score, answer summary, timestamps
+- `player_progress`: user_id, pack_id, unlocked levels, rewards, best score
+- `leaderboard_view` or validated score table: nickname and safe aggregate only
 
+## Authentication
+- MVP: guest/nickname only, local storage
+- Later: Supabase Auth (email/password or supported OAuth) optional
+- Avoid collecting children's email addresses where possible. Follow school and parent privacy requirements before accounts or public rankings.
 
-## Security and privacy
-- Firestore rules deny access by default and grant only necessary permissions.
-- Validate user ownership (`request.auth.uid`) for private profile/progress.
-- Avoid collecting student full names, emails for display, birth dates, or location.
-- Public leaderboard uses nickname and a safe score record only.
-- Scores and rank must be server-validated (Cloud Functions or other trusted process) before they become leaderboard entries.
-- Test rules with Emulator Suite; do not use Firestore test mode in public deployment.
-- Firebase web config is not a server secret; never commit service-account keys or private credentials.
+## Score integrity
+Client-only game scores are easy to modify; local prototype scores are for personal practice only. For a public leaderboard, score submissions must be validated through trusted server-side logic or carefully designed database policies. Never let clients write arbitrary ranking totals.
 
-## Environment and secrets
-- Use local `.env` for build-time configuration; commit `.env.example` with placeholders only.
-- Ensure `.env`, credentials, service-account JSON, and student data are ignored.
-- Do not paste credentials into chat or commit them to GitHub.
+## Security
+- Supabase anon/publishable key may be used client-side only with RLS policies enabled and tested.
+- Never commit service-role key, private keys, passwords, `.env` secrets, or student records.
+- Public GitHub should contain only safe code, docs, and content cleared for public use.
+- Test policies before deploying.
