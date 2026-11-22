@@ -1,0 +1,15 @@
+{
+  "name": "Treasure Quiz — Lost Treasure of Knowledge",
+  "short_name": "Treasure Quiz",
+  "description": "Petualangan kuis Bahasa Indonesia: kumpulkan poin, kunci, dan harta pengetahuan.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#102838",
+  "theme_color": "#102a3a",
+  "icons": [
+    { "src": "./icons/treasure.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "./icons/treasure.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}
