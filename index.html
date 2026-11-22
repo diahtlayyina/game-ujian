@@ -2,8 +2,11 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#10243d">
+  <meta name="description" content="Petualangan kuis Bahasa Indonesia: kumpulkan poin, kunci, dan harta pengetahuan.">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icons/treasure.svg" type="image/svg+xml">
   <title>Treasure Quiz — Lost Treasure of Knowledge</title>
   <link rel="stylesheet" href="./styles.css">
 </head>
@@ -12,5 +15,10 @@
     <section id="screen" aria-live="polite"></section>
   </main>
   <script type="module" src="./src/main.js"></script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(() => {}));
+    }
+  </script>
 </body>
 </html>
