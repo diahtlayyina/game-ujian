@@ -88,3 +88,33 @@
  .region:last-child{width:100%;max-width:100%;grid-column:auto}
 }
 @media(prefers-reduced-motion:reduce){.region.active .icon{animation:none}}
+
+/* Complete screen-system polish: quiz, feedback, rewards, review and accessibility */
+.progress{margin:10px 0 18px;height:14px;background:#e0e7df;box-shadow:inset 0 2px 3px #223b2b18}
+.progress span{background:linear-gradient(90deg,#3ba88f,#75cf9e,#f0c45d);background-size:200% 100%;animation:progressShimmer 4s linear infinite}
+@keyframes progressShimmer{0%{background-position:0% 0}100%{background-position:200% 0}}
+.question-card{background:linear-gradient(145deg,#fffdf7,#fff6e5);border:1px solid #ebd9b6;border-radius:22px;padding:clamp(14px,3vw,24px);box-shadow:0 12px 28px #152f3c12}
+.question-meta span:first-child{display:inline-flex;align-items:center;background:#e6f2ec;border:1px solid #c9e1d3;border-radius:99px;padding:5px 10px;color:#3a715d}
+.question-meta span:last-child{background:#fff1c9;border:1px solid #f0d789;border-radius:99px;padding:5px 10px;color:#8a6425}
+.option:focus-visible,.btn:focus-visible,.avatar:focus-visible{outline:3px solid #287eb3;outline-offset:3px}
+.option:disabled{cursor:default;transform:none}
+.option.correct{box-shadow:inset 0 0 0 1px #3fb88e;animation:correctPop .32s ease-out}
+.option.wrong{box-shadow:inset 0 0 0 1px #e07878;animation:wrongShake .24s ease-out}
+@keyframes correctPop{0%{transform:scale(.98)}100%{transform:scale(1)}}
+@keyframes wrongShake{0%,100%{transform:translateX(0)}35%{transform:translateX(-3px)}70%{transform:translateX(3px)}}
+.feedback.good{border:1px solid #a8e2c5;box-shadow:0 5px 0 #bce8ce}
+.feedback.bad{border:1px solid #f2c7aa;box-shadow:0 5px 0 #f2d7c2}
+.review{border:1px solid #dce6ef;box-shadow:0 3px 0 #e4eaf0;color:#385269;line-height:1.55}
+.review h3{font-family:'DM Serif Display',Georgia,serif;color:#23465d}
+.panel h2,.panel h3{color:#23465d}
+.panel .actions{align-items:stretch}
+.badge{white-space:nowrap}
+.footer-note{opacity:.85}
+@media(max-width:700px){
+ .question-card{padding:14px;border-radius:18px}
+ .question-meta span:last-child{font-size:.78rem}
+ .progress{height:12px;margin-bottom:14px}
+ .feedback.good,.feedback.bad{box-shadow:0 3px 0 #00000008}
+ .option.correct,.option.wrong{animation:none}
+}
+@media(prefers-reduced-motion:reduce){.progress span{animation:none}.option.correct,.option.wrong{animation:none}}
