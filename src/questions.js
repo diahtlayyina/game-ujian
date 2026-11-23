@@ -368,12 +368,12 @@ export const questions = [
     "topic": "Personifikasi",
     "q": "Lengkapilah kalimat personifikasi: ‘Awan hitam di langit mulai ____ ketika hujan turun.’",
     "opts": [
-      "marah dan bersiap",
-      "berjalan ke sekolah",
-      "membeli payung",
-      "membaca buku"
+      "menggelap",
+      "terbentuk",
+      "menebal",
+      "menangis"
     ],
-    "answer": 0,
+    "answer": 3,
     "why": "Kata menangis memberi sifat manusia kepada awan, sehingga termasuk personifikasi."
   },
   {
@@ -454,4 +454,5 @@ export const questions = [
     "answer": 2,
     "why": "Kalimat pertama memakai dan, kalimat kedua memakai tetapi untuk menghubungkan klausa setara."
   }
-];
+]
+;
