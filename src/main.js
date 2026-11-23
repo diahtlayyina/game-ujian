@@ -1,49 +1,331 @@
 import { questions } from "./questions.js";
-const screen=document.querySelector("#screen");
-const KEY="treasureQuiz_v02";
-const avatars=["🦊","🐼","🐯","🐰","🐨","🦄"];
-const regions=[["🏡","Grammar Village","Bronze Key"],["🌲","Enchanted Forest","Forest Gem"],["🌊","Crystal River","Crystal Key"],["⛰️","Wisdom Mountain","Golden Compass"],["🏰","Treasure Castle","Legendary Treasure"]];
-const perRegion=7;
-let state=load(), audioOn=true, currentRegion=0, currentQuestion=0, locked=false, sessionAnswers=[];
-function fresh(){return {name:"",avatar:avatars[0],totalScore:0,completedRegions:[],regionScores:{},attempts:{}}}
-function load(){try{const x=JSON.parse(localStorage.getItem(KEY));return x&&Array.isArray(x.completedRegions)?x:fresh()}catch{return fresh()}}
-function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch{}}
-function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
-function sound(ok){if(!audioOn)return;try{const ctx=new(window.AudioContext||window.webkitAudioContext)();const notes=ok?[{f:660,t:0},{f:880,t:.1},{f:1046,t:.2}]:[{f:260,t:0},{f:196,t:.12}];notes.forEach(n=>{const osc=ctx.createOscillator(),gain=ctx.createGain();osc.connect(gain);gain.connect(ctx.destination);osc.type=ok?"triangle":"sine";osc.frequency.setValueAtTime(n.f,ctx.currentTime+n.t);gain.gain.setValueAtTime(.0001,ctx.currentTime+n.t);gain.gain.exponentialRampToValueAtTime(ok?.08:.055,ctx.currentTime+n.t+.015);gain.gain.exponentialRampToValueAtTime(.0001,ctx.currentTime+n.t+(ok?.22:.28));osc.start(ctx.currentTime+n.t);osc.stop(ctx.currentTime+n.t+(ok?.24:.3))});ctx.close?.()}catch{}}
-function shell(content){screen.innerHTML='<div class="screen"><div class="brand"><div class="brand-mark">🗝️</div><div><div class="brand-title">TREASURE QUIZ</div><div class="brand-sub">The Lost Treasure of Knowledge</div></div></div>'+content+'<div class="footer-note">Belajar, bermain, dan kumpulkan harta pengetahuan ✨</div></div>'}
-function welcome(){shell(`<section class="quest-home"><div class="home-scene"><div class="scene-stars">✦　✧　✦　✧　✦</div><div class="scene-sun">☀</div><div class="scene-moon">✧</div><div class="scene-mountains"></div><div class="scene-castle">🏰</div><div class="scene-river">〰　〰　〰　〰</div><div class="scene-forest">🌲　🌳　🌲　🌳　🌲</div><div class="scene-banner">THE GRAND QUEST</div><div class="scene-side-note">A JOURNEY THROUGH<br>FIVE WORLDS</div></div><div class="home-manifesto"><div class="eyebrow">AN ADVENTURE OF CURIOSITY</div><h1>The Lost Treasure<br><span>of Knowledge</span></h1><p>Lima dunia. Tiga puluh lima tantangan. Satu harta yang hanya bisa ditemukan dengan ilmu dan keberanian.</p><div class="home-world-list"><span>01 <b>Grammar Village</b></span><span>02 <b>Enchanted Forest</b></span><span>03 <b>Crystal River</b></span><span>04 <b>Wisdom Mountain</b></span><span>05 <b>Treasure Castle</b></span></div><div class="home-launch"><button class="btn primary" id="start">Mulai Petualangan <span>→</span></button><button class="btn ghost" id="sound">${audioOn?'🔊 Suara aktif':'🔇 Suara mati'}</button></div><small class="home-note">✦ Setiap jawaban benar membuka jalan menuju harta karun ✦</small></div></section>`);document.querySelector("#start").onclick=profile;document.querySelector("#sound").onclick=()=>{audioOn=!audioOn;welcome()}}
+import * as G from "./game.js";
+import { LANDMARKS, LOGO, CHEST } from "./art.js";
+import { sfx, unlockAudio, played } from "./audio.js";
 
-function profile(){
-shell(`<section class="explorer-profile"><div class="profile-art"><div class="profile-stars">✦ ✧ ✦</div><div class="profile-emblem">🗝️</div><h2>THE EXPLORER</h2><p>Ready for a knowledge quest?</p><div class="profile-ribbon">YOUR ADVENTURE BEGINS</div></div><div class="profile-form"><div class="eyebrow">PLAYER SETUP</div><h1>Who are you, explorer?</h1><p class="profile-intro">Choose your character and give your journey a name.</p><label for="nickname">Explorer name</label><input id="nickname" class="input" maxlength="18" placeholder="Type your nickname" value="${esc(state.name)}"><label class="avatar-label">Choose your companion</label><div class="avatars">${avatars.map(a=>`<button class="avatar ${a===state.avatar?'chosen':''}" data-a="${a}" aria-label="Choose avatar">${a}</button>`).join('')}</div><div class="profile-actions"><button class="btn secondary" id="back">← Back</button><button class="btn primary" id="go">Begin journey →</button></div></div></section>`);
-document.querySelectorAll("[data-a]").forEach(b=>b.onclick=()=>{state.avatar=b.dataset.a;profile()});
-document.querySelector("#back").onclick=welcome;
-document.querySelector("#go").onclick=()=>{const n=document.querySelector("#nickname").value.trim();if(!n){document.querySelector("#nickname").focus();return}state.name=n;save();map()};
+const KEY = "treasureQuiz_v3", LEGACY = "treasureQuiz_v02";
+const root = document.getElementById("app");
+const fx = document.getElementById("fx");
+const reduceMotion = () => window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+const LETTERS = "ABCD";
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+/* ---------- persistence (validated on every load) ---------- */
+function persist() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* private mode */ } }
+function loadState() {
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (raw) return G.sanitize(JSON.parse(raw));
+    const old = localStorage.getItem(LEGACY);
+    if (old) return G.sanitize(G.migrateLegacy(JSON.parse(old)));
+  } catch (e) { /* corrupted -> fresh */ }
+  return G.emptyState();
+}
+let state = loadState();
+persist();
+const setState = (s) => { state = s; persist(); };
+
+/* ---------- UI state ---------- */
+const ui = { view: "welcome", region: 0, qi: 0, review: { scope: "all", region: 0, back: "map", filter: "all" }, modal: null, draftAvatar: null };
+const portrait = window.matchMedia ? matchMedia("(max-width: 720px)") : { matches: false };
+
+/* ---------- shared pieces ---------- */
+const soundBtn = () => `<button class="icon-btn" data-action="sound" aria-pressed="${state.sound}" aria-label="${state.sound ? "Matikan suara" : "Nyalakan suara"}"><span aria-hidden="true">${state.sound ? "🔊" : "🔇"}</span><span class="lbl">${state.sound ? "Suara" : "Hening"}</span></button>`;
+const topbar = (extra = "") => `<header class="topbar"><div class="brand">${LOGO}<div><b>Treasure Quiz</b><small>The Lost Treasure of Knowledge</small></div></div><div class="top-actions">${extra}${soundBtn()}</div></header>`;
+const scorePill = () => `<div class="pill score" id="score" title="Skor kamu"><span aria-hidden="true">⭐</span> <b>${G.overall(state).score}</b></div>`;
+
+/* ---------- views ---------- */
+function vWelcome() {
+  const o = G.overall(state), has = !!state.name, started = o.answered > 0;
+  return `${topbar()}
+  <section class="hero">
+    <div class="hero-copy">
+      <p class="eyebrow">Petualangan Bahasa Indonesia · Kelas 4</p>
+      <h1 data-autofocus tabindex="-1">The Lost Treasure<br><span>of Knowledge</span></h1>
+      <p class="lead">Jelajahi lima wilayah ajaib, jawab pertanyaan, kumpulkan kunci dan permata, lalu temukan harta karun terakhir!</p>
+      <ul class="chips"><li>🗺️ 5 wilayah</li><li>📜 35 tantangan</li><li>⭐ 3.500 poin</li></ul>
+      ${has ? `<p class="welcome-back">Halo lagi, <b>${state.avatar} ${esc(state.name)}</b>!${started ? ` Kamu sudah menjawab ${o.answered} dari ${G.TOTAL} tantangan.` : ""}</p>` : ""}
+      <div class="row">
+        <button class="btn primary big" id="start" data-action="${has ? "goMap" : "goProfile"}">${started ? "Lanjutkan Petualangan" : "Mulai Petualangan"} <span aria-hidden="true">→</span></button>
+        ${has ? `<button class="btn secondary" data-action="goProfile">Ganti penjelajah</button>` : ""}
+        ${started ? `<button class="btn ghost" data-action="restart">Petualangan baru</button>` : ""}
+      </div>
+    </div>
+    <div class="hero-art" aria-hidden="true">
+      <div class="sun"></div><div class="cloud c1"></div><div class="cloud c2"></div><div class="hills"></div>
+      ${LANDMARKS.map((l, i) => `<div class="lm lm${i + 1}">${l}</div>`).join("")}
+    </div>
+  </section>`;
 }
 
-function map(){
-const done=state.completedRegions.length,finished=done===regions.length;
-const nodes=regions.map((r,i)=>{const isDone=state.completedRegions.includes(i),open=i===done||isDone;return `<button class="journey-node node-${i} ${isDone?'done':open?'open':'locked'}" data-region="${i}" ${open?'':'disabled'}><span class="node-icon">${isDone?'🏆':open?r[0]:'🔒'}</span><span class="node-label">${r[1]}</span><small>${isDone?'CLEARED':open?'READY':'LOCKED'}</small></button>`}).join('');
-shell(`<section class="journey-screen"><header class="journey-head"><div><span class="eyebrow">YOUR ADVENTURE JOURNAL</span><h1>${finished?'Journey complete!':'The five realms'}</h1><p>${finished?'You found every piece of knowledge.': 'Follow the trail, unlock each realm, and collect the treasures.'}</p></div><div class="player-chip">${state.avatar}<div><b>${esc(state.name)}</b><small>Explorer</small></div></div></header><div class="journey-map"><div class="map-sky"><span class="map-cloud cloud-a">☁</span><span class="map-cloud cloud-b">☁</span><span class="map-sun">☀</span><div class="trail"></div><div class="trail-dots">✦　·　✦　·　✦</div>${nodes}<div class="map-caption">✧ THE KNOWLEDGE TRAIL ✧</div></div></div><aside class="journey-stats"><div><small>YOUR SCORE</small><strong>⭐ ${state.totalScore}</strong></div><div><small>REALMS CLEARED</small><strong>${done} / 5</strong></div><div><small>QUESTS</small><strong>${done*7} / 35</strong></div></aside><div class="journey-actions"><button class="btn secondary" id="edit">✎ Edit explorer</button><button class="btn primary" id="enter" ${finished?'disabled':''}>${finished?'All realms cleared':'Continue journey →'}</button>${finished?'<button class="btn primary" id="final">Claim treasure ✨</button>':''}<button class="btn ghost" id="reset">Reset journey</button></div></section>`);
-document.querySelector('#edit').onclick=profile;
-document.querySelector('#enter').onclick=()=>startRegion(done);
-document.querySelectorAll('[data-region]').forEach(b=>b.onclick=()=>{const n=Number(b.dataset.region);if(n===done)startRegion(n);else if(state.completedRegions.includes(n))regionReview(n)});
-const fin=document.querySelector('#final');if(fin)fin.onclick=finalResult;
-document.querySelector('#reset').onclick=()=>{if(confirm('Reset semua skor dan progres?')){state=fresh();save();profile()}};
+function vProfile() {
+  const av = ui.draftAvatar || state.avatar;
+  return `${topbar()}
+  <section class="card profile">
+    <h2 data-autofocus tabindex="-1">Siapa namamu, Penjelajah?</h2>
+    <form data-form="profile" novalidate>
+      <label for="nick">Nama panggilan</label>
+      <input id="nick" class="input" name="nick" maxlength="${G.NAME_MAX}" autocomplete="off" autocapitalize="words" placeholder="Contoh: Dina" value="${esc(state.name)}" aria-describedby="nickHint nickErr">
+      <p class="hint" id="nickHint">Cukup nama panggilan saja. Jangan tulis nama lengkap atau data pribadi.</p>
+      <p class="err" id="nickErr" role="alert"></p>
+      <fieldset class="avatars"><legend>Pilih temanmu</legend>
+        ${G.AVATARS.map((a) => `<button type="button" class="avatar${a === av ? " chosen" : ""}" data-action="avatar" data-v="${a}" aria-pressed="${a === av}" aria-label="Teman ${a}">${a}</button>`).join("")}
+      </fieldset>
+      <div class="row end"><button type="button" class="btn ghost" data-action="goWelcome">← Kembali</button><button class="btn primary" type="submit">Ke Peta →</button></div>
+    </form>
+  </section>`;
 }
 
-function startRegion(index){currentRegion=index;currentQuestion=0;sessionAnswers=[];quiz()}
-
-function quiz(){
-const qidx=currentRegion*perRegion+currentQuestion,q=questions[qidx];if(!q){regionResult();return}locked=false;const region=regions[currentRegion];
-shell(`<section class="quiz-stage"><aside class="quest-rail"><div class="rail-brand">🗝️</div><span class="eyebrow">QUEST ${currentRegion+1}</span><h2>${region[1]}</h2><div class="rail-player">${state.avatar}<b>${esc(state.name)}</b></div><div class="rail-score"><small>POINTS</small><strong>⭐ ${state.totalScore}</strong></div><div class="rail-progress-label"><small>CHALLENGE</small><b>${currentQuestion+1} / ${perRegion}</b></div><div class="progress"><span style="width:${(currentQuestion+1)/perRegion*100}%"></span></div><div class="rail-keys">${regions.map((r,i)=>`<span class="${i===currentRegion?'current':state.completedRegions.includes(i)?'cleared':'locked'}">${i<state.completedRegions.length?'✓':i===currentRegion?'✦':'•'} ${r[2]}</span>`).join('')}</div></aside><div class="challenge-board"><div class="challenge-top"><span class="eyebrow">${region[0]} ${region[1]}</span><span class="challenge-number">CHALLENGE ${String(currentQuestion+1).padStart(2,'0')}</span></div><div class="challenge-topic">${esc(q.topic)}</div><h1 class="challenge-question">${esc(q.q)}</h1><div class="challenge-options">${q.opts.map((o,j)=>`<button class="challenge-option" data-o="${j}"><span class="letter">${String.fromCharCode(65+j)}</span><span>${esc(o)}</span></button>`).join('')}</div><div id="feedback"></div><div class="challenge-actions"><button class="btn ghost" id="mapback">← Journey map</button><button class="btn primary" id="next" disabled>${currentQuestion===perRegion-1?'Complete realm':'Next question →'}</button></div></div></section>`);
-document.querySelector("#mapback").onclick=map;document.querySelectorAll("[data-o]").forEach(b=>b.onclick=()=>answer(Number(b.dataset.o)));document.querySelector("#next").onclick=()=>{if(!locked)return;if(currentQuestion<perRegion-1){currentQuestion++;quiz()}else regionResult()};
+const LAYOUTS = {
+  land: [[12, 68], [31, 33], [50, 68], [69, 31], [88, 60]],
+  port: [[27, 87], [72, 70], [28, 52], [72, 34], [40, 15]],
+};
+function pathD(pts, a, b) {
+  const p = (i) => pts[Math.max(0, Math.min(pts.length - 1, i))];
+  const seg = (i) => { const p0 = p(i - 1), p1 = p(i), p2 = p(i + 1), p3 = p(i + 2);
+    return `M${p1[0]} ${p1[1]} C${p1[0] + (p2[0] - p0[0]) / 6} ${p1[1] + (p2[1] - p0[1]) / 6} ${p2[0] - (p3[0] - p1[0]) / 6} ${p2[1] - (p3[1] - p1[1]) / 6} ${p2[0]} ${p2[1]}`; };
+  let d = ""; for (let i = a; i < b; i++) d += seg(i); return d;
+}
+function flowers(n) {
+  let seed = 7, out = "";
+  const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+  const cols = ["#fff", "#ffd1e0", "#ffe27a", "#d9ccff"];
+  for (let i = 0; i < n; i++) out += `<i class="fl" style="left:${(rnd() * 96 + 2).toFixed(1)}%;top:${(rnd() * 42 + 55).toFixed(1)}%;background:${cols[i % 4]}"></i>`;
+  return out;
+}
+function vMap() {
+  const o = G.overall(state), lay = portrait.matches ? "port" : "land", pts = LAYOUTS[lay], cur = G.currentRegion(state);
+  const doneUpTo = G.REGIONS.reduce((n, _, r) => (G.regionStatus(state, r) === "completed" && n === r ? r + 1 : n), 0);
+  const next = G.REGIONS[cur];
+  const nodes = G.REGIONS.map((R, r) => {
+    const st = G.regionStatus(state, r), s = G.regionStats(state, r), [x, y] = pts[r];
+    const label = st === "locked" ? "Terkunci" : st === "completed" ? `Selesai · ${s.correct}/${G.PER_REGION} benar` : s.answered ? `Lanjut · ${s.answered}/${G.PER_REGION}` : "Ayo mulai!";
+    const badge = st === "locked" ? `<span class="badge">🔒</span>` : st === "completed" ? `<span class="badge done">✓</span>` : "";
+    const you = r === cur && !o.complete ? `<span class="you">${state.avatar}</span>` : "";
+    return `<button class="node ${st}" style="left:${x}%;top:${y}%" data-action="region" data-r="${r}" ${st === "locked" ? 'aria-disabled="true"' : ""} aria-label="${R.name}. ${label}.">
+      <span class="art">${LANDMARKS[r]}${badge}${you}</span><span class="nlabel"><b>${R.name}</b><small>${label}</small></span></button>`;
+  }).join("");
+  return `${topbar()}
+  <section class="map-screen">
+    <div class="map-head">
+      <div class="player"><span class="av" aria-hidden="true">${state.avatar}</span><div><b>${esc(state.name || "Penjelajah")}</b><small>Penjelajah</small></div></div>
+      <div class="stats"><div class="pill"><span aria-hidden="true">⭐</span> <b>${o.score}</b> <small>poin</small></div><div class="pill"><span aria-hidden="true">🗺️</span> <b>${o.regionsDone}/5</b> <small>wilayah</small></div><div class="pill"><span aria-hidden="true">✅</span> <b>${o.answered}/${G.TOTAL}</b> <small>tantangan</small></div></div>
+    </div>
+    <h1 class="sr-only" data-autofocus tabindex="-1">Peta Petualangan</h1>
+    <div class="map-wrap map-${lay}">
+      <svg class="scene" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+        <defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7fd3ff"/><stop offset=".55" stop-color="#d8f4ff"/></linearGradient>
+        <linearGradient id="grass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9be08f"/><stop offset="1" stop-color="#5ec47b"/></linearGradient></defs>
+        <rect width="100" height="100" fill="url(#sky)"/>
+        <path d="M0 52 Q22 36 44 50 T100 44 V100 H0Z" fill="#b7ebb0"/>
+        <path d="M0 62 Q30 50 60 62 T100 58 V100 H0Z" fill="url(#grass)"/>
+        <path d="${pathD(pts, 0, 4)}" fill="none" stroke="#fff7d6" stroke-width="16" stroke-linecap="round" vector-effect="non-scaling-stroke" opacity=".9"/>
+        <path d="${pathD(pts, 0, 4)}" fill="none" stroke="#e6c987" stroke-width="3" stroke-dasharray="1 14" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
+        ${doneUpTo > 0 ? `<path d="${pathD(pts, 0, Math.min(doneUpTo, 4))}" fill="none" stroke="#ffc83d" stroke-width="8" stroke-linecap="round" vector-effect="non-scaling-stroke"/>` : ""}
+      </svg>
+      <div class="sunmap"></div><div class="cloud c1"></div><div class="cloud c2"></div>${flowers(18)}${nodes}
+    </div>
+    <div class="map-foot">
+      <p class="hint-line" id="toast" role="status" aria-live="polite">${o.complete ? "Kamu sudah menyelesaikan semua wilayah! Buka harta karunnya!" : `Berikutnya: <b>${next.name}</b> — ${next.blurb}.`}</p>
+      <div class="row">
+        ${o.complete ? `<button class="btn primary big" data-action="final">🎁 Buka Harta Karun!</button>` : `<button class="btn primary big" data-action="region" data-r="${cur}">${G.regionStats(state, cur).answered ? "Lanjutkan" : "Mulai"} ${next.name} →</button>`}
+        ${o.answered ? `<button class="btn secondary" data-action="review" data-scope="all" data-back="map">📖 Review jawaban</button>` : ""}
+        <button class="btn ghost" data-action="goProfile">Ubah penjelajah</button>
+        ${o.answered ? `<button class="btn ghost" data-action="restart">Petualangan baru</button>` : ""}
+      </div>
+    </div>
+  </section>`;
 }
 
-function answer(choice){if(locked)return;locked=true;const q=questions[currentRegion*perRegion+currentQuestion],ok=choice===q.answer;sessionAnswers.push({question:q,choice,ok});save();sound(ok);document.querySelectorAll("[data-o]").forEach((b,j)=>{b.disabled=true;if(j===q.answer)b.classList.add("correct");if(j===choice&&!ok)b.classList.add("wrong")});document.querySelector("#feedback").innerHTML=`<div class="feedback ${ok?"good":"bad"}">${ok?"🎉 Benar! +100 poin":"💡 Belum tepat, tetap semangat!"}<div style="margin-top:7px;font-weight:600">${esc(q.why)}</div></div>`;document.querySelector("#next").disabled=false}
-function regionResult(){const correct=sessionAnswers.filter(a=>a.ok).length,score=correct*100;state.completedRegions.push(currentRegion);state.regionScores[currentRegion]=score;state.totalScore+=score;state.attempts[currentRegion]=sessionAnswers.map(a=>({id:a.question.id,choice:a.choice,ok:a.ok}));save();const reward=regions[currentRegion][2];shell(`<section class="realm-reward"><div class="reward-sky"><span class="reward-stars">✦ ✧ ✦ ✧ ✦</span><div class="reward-medal">${correct===perRegion?'🏆':'🗝️'}</div><div class="reward-title">REALM CLEARED</div><h1>${correct===perRegion?'Perfect Quest!':'Well done, Explorer!'}</h1><p>${esc(state.name)}, kamu telah menyelesaikan ${regions[currentRegion][1]}.</p><div class="reward-tally"><div><small>POINTS EARNED</small><strong>+${score}</strong></div><div><small>RIGHT ANSWERS</small><strong>${correct} / 7</strong></div></div></div><div class="reward-card"><span class="eyebrow">YOUR COLLECTIBLE</span><div class="reward-item">${regions[currentRegion][0]}</div><h2>${reward}</h2><p>${correct===perRegion?'Luar biasa! Semua tantangan berhasil dijawab.':'Setiap usaha adalah langkah bertambahnya ilmu. Teruskan perjalananmu!'}</p><div class="reward-buttons"><button class="btn secondary" id="review">Review jawaban</button><button class="btn primary" id="map">${currentRegion===4?'Lihat harta terakhir →':'Kembali ke peta →'}</button></div><div id="reviewbox" hidden></div></div></section>`);document.querySelector("#map").onclick=()=>currentRegion===4?finalResult():map();document.querySelector("#review").onclick=()=>showReview(sessionAnswers,document.querySelector("#reviewbox"))}
+const FB_OK = ["Benar! Kamu hebat!", "Tepat sekali!", "Keren, jawabanmu benar!", "Mantap, terus semangat!"];
+const FB_TRY = ["Belum tepat, tapi kamu berani mencoba!", "Hampir! Yuk kita pelajari bersama.", "Tidak apa-apa, salah itu bagian dari belajar!", "Semangat! Lihat jawaban yang benar ya."];
+function vQuiz() {
+  const r = ui.region, R = G.REGIONS[r], q = G.qOf(r, ui.qi), a = state.answers[q.id], answered = !!a, ok = answered && a.choice === q.answer;
+  const last = ui.qi === G.PER_REGION - 1;
+  const dots = Array.from({ length: G.PER_REGION }, (_, i) => { const qq = G.qOf(r, i), aa = state.answers[qq.id];
+    return `<li class="${aa ? (aa.choice === qq.answer ? "ok" : "miss") : ""}${i === ui.qi ? " now" : ""}" aria-label="Soal ${i + 1}${aa ? (aa.choice === qq.answer ? " benar" : " belum tepat") : ""}"></li>`; }).join("");
+  const opts = q.opts.map((o, j) => {
+    const cls = !answered ? "" : j === q.answer ? " correct" : j === a.choice ? " wrong" : " dim";
+    const mark = !answered ? "" : j === q.answer ? "✓" : j === a.choice ? "✗" : "";
+    return `<button class="opt${cls}" data-action="answer" data-c="${j}" ${answered ? "disabled" : ""}><span class="ltr">${LETTERS[j]}</span><span class="otxt">${esc(o)}</span><span class="mark" aria-hidden="true">${mark}</span></button>`;
+  }).join("");
+  const msg = (ok ? FB_OK : FB_TRY)[(r + ui.qi) % 4];
+  const fb = answered ? `<div class="feedback ${ok ? "good" : "try"}" role="status"><div class="fb-head"><span class="fb-emoji" aria-hidden="true">${ok ? "🎉" : "💪"}</span><div><b>${msg}</b><span class="pts${ok ? "" : " soft"}">${ok ? "+100 poin" : "+0 poin · ayo belajar bersama!"}</span></div></div>
+      <p><b>Jawaban benar:</b> ${LETTERS[q.answer]}. ${esc(q.opts[q.answer])}</p><p><b>Penjelasan:</b> ${esc(q.why)}</p></div>
+      <button class="btn primary big" data-action="next" data-autofocus>${last ? "Selesaikan Wilayah 🏁" : "Pertanyaan Berikutnya →"}</button>` : "";
+  return `${topbar(`<button class="btn ghost small" data-action="goMap">← Peta</button>`)}
+  <section class="quiz">
+    <div class="quiz-head"><div class="region-tag"><span aria-hidden="true">${R.icon}</span> ${R.name}</div>${scorePill()}</div>
+    <ol class="dots" aria-label="Kemajuan: soal ${ui.qi + 1} dari ${G.PER_REGION}">${dots}</ol>
+    <article class="card q-card">
+      <p class="topic">Tantangan ${ui.qi + 1} dari ${G.PER_REGION} · ${esc(q.topic)}</p>
+      <h1 class="question" ${answered ? "" : "data-autofocus"} tabindex="-1">${esc(q.q)}</h1>
+      <div class="opts" role="group" aria-label="Pilihan jawaban">${opts}</div>
+      ${fb}
+    </article>
+  </section>`;
+}
 
-function regionReview(index){const saved=state.attempts[index]||[],items=saved.map(a=>{const question=questions.find(q=>q.id===a.id);return question?{question,choice:a.choice,ok:a.ok}:null}).filter(Boolean);shell(`<section class="realm-reward"><div class="reward-sky"><span class="reward-stars">✦ ✧ ✦</span><h1>Review ${regions[index][1]}</h1><p>Periksa kembali jawaban dan penjelasan dari wilayah ini.</p></div><div class="reward-card"><button class="btn secondary" id="reviewback">← Kembali ke peta</button><div id="reviewbox"></div></div></section>`);document.querySelector('#reviewback').onclick=map;showReview(items,document.querySelector('#reviewbox'))}
-function showReview(items,box){box.hidden=false;box.innerHTML="<h3>📖 Review tantangan</h3>"+items.map((a,i)=>`<div class="review"><b>${i+1}. ${esc(a.question.q)}</b>${a.choice!==undefined?`<p class="muted">Jawabanmu: ${esc(a.question.opts[a.choice])} ${a.ok?'✓ Benar':'✗ Belum tepat'}</p>`:''}<p class="muted">Jawaban benar: ${esc(a.question.opts[a.question.answer])}</p><p>${esc(a.question.why)}</p></div>`).join("")}
-function finalResult(){shell(`<section class="grand-finale"><div class="final-sky"><div class="final-stars">✧　✦　✧　✦　✧</div><div class="final-chest">🗝️<span>💎</span></div><div class="eyebrow">THE LEGEND IS COMPLETE</div><h1>Treasure of<br><span>Knowledge</span></h1><p>Selamat ${esc(state.name)}! Kamu telah menuntaskan lima dunia dan membuktikan bahwa ilmu adalah harta yang paling berharga.</p><div class="final-score">⭐ ${state.totalScore} <small>/ 3500 POINTS</small></div></div><div class="final-collection"><h2>Collected along the way</h2><div class="collection-grid">${regions.map(r=>`<div class="collection-item"><span>${r[0]}</span><b>${r[2]}</b><small>${r[1]}</small></div>`).join('')}</div><div class="final-actions"><button class="btn secondary" id="reviewall">Review 35 tantangan</button><button class="btn primary" id="home">Kembali ke peta</button></div><div id="allreview" hidden></div></div></section>`);document.querySelector("#home").onclick=map;document.querySelector("#reviewall").onclick=()=>showReview(questions.map(q=>({question:q})),document.querySelector("#allreview"))}
+function vReward() {
+  const r = ui.region, R = G.REGIONS[r], s = G.regionStats(state, r), o = G.overall(state), nextR = G.REGIONS[r + 1];
+  const perfect = s.correct === G.PER_REGION;
+  return `${topbar()}
+  <section class="reward card">
+    <div class="medal" aria-hidden="true">${perfect ? "🏆" : "🎖️"}</div>
+    <p class="eyebrow">Wilayah selesai!</p>
+    <h1 data-autofocus tabindex="-1">${perfect ? "Sempurna!" : "Kerja bagus"}, ${esc(state.name)}!</h1>
+    <p class="lead">Kamu menyelesaikan <b>${R.name}</b>.</p>
+    <div class="tally"><div><small>Poin wilayah ini</small><b>+${s.score}</b></div><div><small>Jawaban benar</small><b>${s.correct}/${G.PER_REGION}</b></div><div><small>Total poin</small><b>${o.score}</b></div></div>
+    <div class="loot"><span class="loot-ico" aria-hidden="true">${R.rewardIcon}</span><div><small>Hadiah baru</small><b>${R.reward}</b></div></div>
+    ${nextR ? `<p class="unlock">🔓 Wilayah baru terbuka: <b>${nextR.name}</b></p>` : `<p class="unlock">🎁 Harta karun terakhir menantimu!</p>`}
+    <div class="progress" role="img" aria-label="${o.regionsDone} dari 5 wilayah selesai"><span style="width:${(o.regionsDone / 5) * 100}%"></span></div>
+    <p class="hint">${o.regionsDone} dari 5 wilayah selesai</p>
+    <div class="row">
+      <button class="btn secondary" data-action="review" data-scope="region" data-region="${r}" data-back="reward">📖 Review jawaban</button>
+      ${nextR ? `<button class="btn primary big" data-action="goMap">Ke Peta Petualangan →</button>` : `<button class="btn primary big" data-action="final">🎁 Buka Harta Karun!</button>`}
+    </div>
+  </section>`;
+}
 
-welcome();
+function vReview() {
+  const { scope, region, filter } = ui.review;
+  const qs = scope === "region" ? Array.from({ length: G.PER_REGION }, (_, i) => G.qOf(region, i)) : questions;
+  const items = qs.map((q) => ({ q, a: state.answers[q.id] })).filter((x) => x.a);
+  const wrong = items.filter((x) => x.a.choice !== x.q.answer);
+  const shown = filter === "wrong" ? wrong : items;
+  const title = scope === "region" ? `Review: ${G.REGIONS[region].name}` : "Review semua jawaban";
+  const body = !items.length
+    ? `<div class="empty"><div aria-hidden="true">🧭</div><p>Belum ada jawaban untuk ditinjau di sini. Mainkan wilayah ini dulu ya!</p>${scope === "region" && G.regionStatus(state, region) !== "locked" ? `<button class="btn primary" data-action="region" data-r="${region}">Mulai ${G.REGIONS[region].name}</button>` : `<button class="btn primary" data-action="goMap">Ke Peta</button>`}</div>`
+    : !shown.length ? `<div class="empty"><div aria-hidden="true">🌟</div><p>Tidak ada jawaban yang perlu dipelajari lagi. Hebat!</p></div>`
+    : shown.map(({ q, a }) => { const ok = a.choice === q.answer;
+        return `<article class="rv ${ok ? "good" : "try"}"><header><span class="num">${G.numberOf(q)}</span><span class="topic">${esc(q.topic)}</span><span class="tag ${ok ? "good" : "try"}">${ok ? "✓ Benar" : "Belum tepat"}</span></header>
+        <h3>${esc(q.q)}</h3>
+        <p><b>Jawabanmu:</b> ${LETTERS[a.choice]}. ${esc(q.opts[a.choice])}</p>
+        ${ok ? "" : `<p><b>Jawaban benar:</b> ${LETTERS[q.answer]}. ${esc(q.opts[q.answer])}</p>`}
+        <p class="why"><b>Penjelasan:</b> ${esc(q.why)}</p></article>`; }).join("");
+  return `${topbar(`<button class="btn ghost small" data-action="reviewBack">← Kembali</button>`)}
+  <section class="review">
+    <h1 data-autofocus tabindex="-1">${title}</h1>
+    <p class="lead">${items.length ? `${items.length - wrong.length} benar dari ${items.length} soal yang sudah dijawab.` : ""}</p>
+    ${items.length ? `<div class="filters" role="group" aria-label="Saring"><button class="chip${filter === "all" ? " on" : ""}" data-action="filter" data-f="all" aria-pressed="${filter === "all"}">Semua (${items.length})</button><button class="chip${filter === "wrong" ? " on" : ""}" data-action="filter" data-f="wrong" aria-pressed="${filter === "wrong"}">Perlu dipelajari (${wrong.length})</button></div>` : ""}
+    <div class="rv-list">${body}</div>
+  </section>`;
+}
+
+function vFinal() {
+  const o = G.overall(state), rk = G.rank(o.percent);
+  const rows = G.REGIONS.map((R, r) => { const s = G.regionStats(state, r);
+    return `<li><span class="ico" aria-hidden="true">${R.rewardIcon}</span><div class="grow"><b>${R.name}</b><small>${R.reward}</small><div class="bar" aria-hidden="true"><span style="width:${(s.correct / G.PER_REGION) * 100}%"></span></div></div><span class="sc">${s.correct}/${G.PER_REGION}</span></li>`; }).join("");
+  return `${topbar()}
+  <section class="final card">
+    <div class="chest" id="chest" aria-hidden="true">${CHEST}</div>
+    <p class="eyebrow">Harta karun ditemukan!</p>
+    <h1 data-autofocus tabindex="-1">Selamat, ${esc(state.name)}!</h1>
+    <p class="rank">${rk.title}</p><p class="lead">${rk.text}</p>
+    <div class="tally big"><div><small>Skor akhir</small><b>⭐ ${o.score}</b><em>dari ${G.MAX_SCORE}</em></div><div><small>Jawaban benar</small><b>${o.correct}/${G.TOTAL}</b><em>${o.percent}%</em></div><div><small>Wilayah</small><b>${o.regionsDone}/5</b><em>selesai</em></div></div>
+    <ul class="breakdown">${rows}</ul>
+    <div class="row">
+      <button class="btn secondary" data-action="review" data-scope="all" data-back="final">📖 Review jawaban</button>
+      <button class="btn secondary" data-action="goMap">🗺️ Lihat peta</button>
+      <button class="btn primary" data-action="restart">🔁 Main lagi</button>
+    </div>
+  </section>`;
+}
+
+const modalHTML = () => `<div class="modal-back" data-action="closeModal" data-backdrop><div class="modal" role="dialog" aria-modal="true" aria-labelledby="mt">
+  <h3 id="mt">Mulai petualangan baru?</h3><p>Semua skor dan jawabanmu akan dihapus. Nama dan temanmu tetap tersimpan.</p>
+  <div class="row end"><button class="btn ghost" data-action="closeModal" data-autofocus>Batal</button><button class="btn danger" data-action="confirmRestart">Ya, mulai baru</button></div></div></div>`;
+
+const VIEWS = { welcome: vWelcome, profile: vProfile, map: vMap, quiz: vQuiz, reward: vReward, review: vReview, final: vFinal };
+
+/* ---------- rendering ---------- */
+function render({ scroll = false } = {}) {
+  root.innerHTML = `<div class="shell">${VIEWS[ui.view]()}</div>${ui.modal ? modalHTML() : ""}`;
+  document.body.dataset.view = ui.view;
+  if (scroll) window.scrollTo(0, 0);
+  const f = root.querySelector("[data-autofocus]");
+  if (f) f.focus({ preventScroll: true });
+  if (ui.view === "final") setTimeout(() => document.getElementById("chest")?.classList.add("open"), 150);
+}
+function go(view) { ui.view = view; ui.modal = null; render({ scroll: true }); }
+
+function burst(n = 70) {
+  if (reduceMotion() || !fx) return;
+  const cols = ["#ffc83d", "#ff6b5e", "#34d399", "#2f80ed", "#7a5cff", "#ff8fc1"];
+  for (let i = 0; i < n; i++) {
+    const s = document.createElement("span"); s.className = "confetti";
+    s.style.cssText = `--x:${Math.random() * 100}vw;--c:${cols[i % cols.length]};--d:${1.8 + Math.random() * 1.6}s;--r:${Math.random() * 720 - 360}deg;--w:${6 + Math.random() * 8}px;animation-delay:${Math.random() * 0.4}s`;
+    fx.appendChild(s); setTimeout(() => s.remove(), 4200);
+  }
+}
+function toast(msg) { const el = document.getElementById("toast"); if (!el) return; el.innerHTML = msg; el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash"); }
+
+/* ---------- actions (single delegated handler) ---------- */
+function startRegion(r) {
+  const st = G.regionStatus(state, r);
+  if (st === "locked") { toast(`🔒 Selesaikan <b>${G.REGIONS[r - 1].name}</b> dulu untuk membuka <b>${G.REGIONS[r].name}</b>.`); sfx("tap", state.sound); return; }
+  if (st === "completed") { ui.review = { scope: "region", region: r, back: "map", filter: "all" }; go("review"); return; }
+  ui.region = r; ui.qi = G.nextQuestionIndex(state, r); sfx("tap", state.sound); go("quiz");
+}
+const actions = {
+  goWelcome: () => go("welcome"),
+  goProfile: () => { ui.draftAvatar = state.avatar; go("profile"); },
+  goMap: () => { sfx("tap", state.sound); go("map"); },
+  avatar: (el) => { ui.draftAvatar = el.dataset.v; root.querySelectorAll(".avatar").forEach((b) => { const on = b.dataset.v === ui.draftAvatar; b.classList.toggle("chosen", on); b.setAttribute("aria-pressed", on); }); sfx("tap", state.sound); },
+  sound: () => { setState({ ...state, sound: !state.sound }); root.querySelectorAll('[data-action="sound"]').forEach((b) => { b.outerHTML = soundBtn(); }); sfx("tap", state.sound); },
+  region: (el) => startRegion(Number(el.dataset.r)),
+  answer: (el) => {
+    if (ui.view !== "quiz") return;
+    const res = G.answerQuestion(state, ui.region, ui.qi, Number(el.dataset.c));
+    if (!res.accepted) return; // duplicate / invalid click: ignored, score untouched
+    setState(res.state); sfx(res.correct ? "correct" : "wrong", state.sound); render();
+    document.getElementById("score")?.classList.add("bump");
+    root.querySelector(".feedback")?.scrollIntoView({ block: "nearest", behavior: reduceMotion() ? "auto" : "smooth" });
+    if (res.correct) burst(22);
+  },
+  next: () => {
+    if (!state.answers[G.qOf(ui.region, ui.qi).id]) return;
+    if (ui.qi < G.PER_REGION - 1) { ui.qi++; render({ scroll: true }); }
+    else { sfx("reward", state.sound); go("reward"); burst(110); }
+  },
+  review: (el) => { ui.review = { scope: el.dataset.scope, region: Number(el.dataset.region || 0), back: el.dataset.back || "map", filter: "all" }; go("review"); },
+  reviewBack: () => go(ui.review.back === "reward" ? "reward" : ui.review.back === "final" ? "final" : "map"),
+  filter: (el) => { ui.review.filter = el.dataset.f; render(); },
+  final: () => { if (!G.overall(state).complete) { go("map"); return; } sfx("reward", state.sound); go("final"); burst(140); },
+  restart: () => { ui.modal = "restart"; render(); },
+  closeModal: () => { ui.modal = null; render(); },
+  confirmRestart: () => { setState(G.resetProgress(state)); ui.modal = null; ui.region = 0; ui.qi = 0; go(state.name ? "map" : "welcome"); },
+};
+root.addEventListener("click", (e) => {
+  const el = e.target.closest("[data-action]");
+  if (!el || !root.contains(el)) return;
+  if (el.hasAttribute("data-backdrop") && e.target !== el) return;
+  unlockAudio();
+  const fn = actions[el.dataset.action];
+  if (fn) fn(el, e);
+});
+root.addEventListener("submit", (e) => {
+  e.preventDefault();
+  if (e.target.dataset.form !== "profile") return;
+  const input = e.target.querySelector("#nick"), name = input.value.replace(/\s+/g, " ").trim().slice(0, G.NAME_MAX);
+  if (!name) { root.querySelector("#nickErr").textContent = "Tulis nama panggilanmu dulu ya."; input.focus(); return; }
+  setState({ ...state, name, avatar: ui.draftAvatar || state.avatar }); sfx("tap", state.sound); go("map");
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && ui.modal) { actions.closeModal(); return; }
+  if (ui.view !== "quiz" || ui.modal || e.ctrlKey || e.metaKey || e.altKey || /^(INPUT|TEXTAREA)$/.test(e.target.tagName)) return;
+  if (e.key.length !== 1) return;
+  const k = e.key.toUpperCase(), idx = "1234".includes(k) ? Number(k) - 1 : LETTERS.indexOf(k);
+  if (idx >= 0 && idx < 4) { const b = root.querySelector(`[data-action="answer"][data-c="${idx}"]`); if (b && !b.disabled) b.click(); }
+});
+if (portrait.addEventListener) portrait.addEventListener("change", () => { if (ui.view === "map") render(); });
+
+/* ---------- service worker: network-first, auto-reload on update ---------- */
+if ("serviceWorker" in navigator) {
+  const hadController = !!navigator.serviceWorker.controller; let reloaded = false;
+  navigator.serviceWorker.register("./sw.js", { updateViaCache: "none" }).then((reg) => reg.update && reg.update()).catch(() => {});
+  navigator.serviceWorker.addEventListener("controllerchange", () => { if (!hadController || reloaded) return; reloaded = true; location.reload(); });
+}
+
+window.__treasureQuiz = { get state() { return state; }, ui, played, G };
+render();
