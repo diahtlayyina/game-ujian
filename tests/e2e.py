@@ -58,7 +58,7 @@ def part_a(browser):
     classes = [nodes.nth(i).get_attribute("class") for i in range(5)]
     check("map: only Grammar Village available, others locked", "available" in classes[0] and all("locked" in c for c in classes[1:]), str(classes))
     pg.screenshot(path=f"{OUT}/02_map_desktop.png")
-    pg.locator(".node[data-r='1']").click()
+    pg.locator(".node[data-r='1']").click(force=True)   # aria-disabled (not 'disabled'): a child can still tap it
     check("map: locked region -> hint, quiz does NOT start", pg.locator(".question").count() == 0 and "Grammar Village" in pg.locator("#toast").inner_text())
     # 4. CRITICAL
     pg.locator(".node[data-r='0']").click(); pg.wait_for_selector(".question", timeout=3000)

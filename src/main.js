@@ -78,7 +78,7 @@ function vProfile() {
 
 const LAYOUTS = {
   land: [[12, 68], [31, 33], [50, 68], [69, 31], [88, 60]],
-  port: [[27, 87], [72, 70], [28, 52], [72, 34], [40, 15]],
+  port: [[27, 85], [72, 68], [28, 51], [72, 34], [28, 16]],
 };
 function pathD(pts, a, b) {
   const p = (i) => pts[Math.max(0, Math.min(pts.length - 1, i))];
