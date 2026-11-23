@@ -1,3 +1,27 @@
+/* Complete global design foundation — intentionally loaded before screen-specific rules */
+:root{color-scheme:light;--ink:#29463a;--muted:#718076;--cream:#f7f4e8;--paper:#fffdf6;--line:#e5dcc8;--green:#2f6653;--green-dark:#173e45;--gold:#d4b36e;--shadow:0 14px 38px rgba(35,61,45,.09)}
+*{box-sizing:border-box}
+html{min-height:100%;background:var(--cream)}
+body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 10% 0%,#e6efdf 0,transparent 38%),radial-gradient(ellipse at 90% 5%,#e5eee8 0,transparent 35%),var(--cream);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);line-height:1.5}
+button,input{font:inherit}button{touch-action:manipulation}button:focus-visible,input:focus-visible{outline:3px solid #d5b76d;outline-offset:3px}
+.app-shell{width:100%;min-height:100vh;padding:clamp(12px,3vw,32px)}
+.screen{max-width:1260px;margin:0 auto;min-height:calc(100vh - 48px);display:flex;flex-direction:column}
+.brand{display:flex;align-items:center;gap:12px;width:max-content;margin:0 auto 20px;padding:8px 18px;border:1px solid #e4d7b5;border-radius:999px;background:#fffdf5;box-shadow:0 6px 20px #2b473c0b}
+.brand-mark{display:grid;place-items:center;width:40px;height:40px;border-radius:14px;background:linear-gradient(145deg,#e8d6a1,#b99855);font-size:1.3rem;box-shadow:inset 0 1px 2px #fff8}
+.brand-title{font-weight:950;letter-spacing:.16em;font-size:.78rem;color:#355b4a}.brand-sub{font-size:.63rem;letter-spacing:.07em;color:#8a8c78;margin-top:2px}
+.eyebrow{font-size:.68rem;font-weight:900;letter-spacing:.17em;color:#ad8950;text-transform:uppercase}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;border:0;border-radius:13px;padding:12px 18px;min-height:44px;font-weight:800;cursor:pointer;transition:transform .16s,box-shadow .16s,background .16s;white-space:normal}
+.btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 18px #253f3020}.btn:active:not(:disabled){transform:translateY(0)}.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.primary{background:linear-gradient(135deg,#2d6653,#214b48);color:#fffdf1;box-shadow:0 5px 12px #214b4820}.btn.secondary{background:#e9efe3;color:#365c48;border:1px solid #d4e1d0}.btn.ghost{background:transparent;color:#64776b;border:1px solid #ded6c3}
+.footer-note{margin:24px auto 0;text-align:center;color:#9a927d;font-size:.7rem;letter-spacing:.05em;padding:10px}
+.muted{color:var(--muted)}
+.feedback{border-radius:14px;padding:15px 18px;font-size:.93rem;line-height:1.55}.feedback.good{background:#e4f3df;border:1px solid #b8d9ad;color:#2f6041}.feedback.bad{background:#fff0df;border:1px solid #ead1aa;color:#765635}
+.review{padding:14px 0;border-bottom:1px solid #e8e0d1;color:#526458;text-align:left}.review:last-child{border-bottom:0}.review p{margin:6px 0;font-size:.9rem}.review h3{color:#355b49}
+#reviewbox,#allreview{max-height:460px;overflow:auto;margin-top:14px;padding:12px;background:#fbf8ed;border:1px solid #e7dcc2;border-radius:14px}
+@media(max-width:650px){.app-shell{padding:8px}.screen{min-height:calc(100vh - 16px)}.brand{margin-bottom:12px;padding:7px 14px}.brand-mark{width:34px;height:34px}.brand-title{font-size:.7rem}.brand-sub{font-size:.58rem}}
+/* Compact map layout for tablets and phones: no overlapping nodes */
+@media(max-width:850px){.map-sky{height:auto;min-height:570px;padding:20px 10px 55px}.journey-node{width:44%;min-height:120px}.journey-node.node-0{left:4%;top:24%}.journey-node.node-1{left:52%;top:24%}.journey-node.node-2{left:4%;top:49%}.journey-node.node-3{left:52%;top:49%}.journey-node.node-4{left:28%;right:auto;top:74%}.trail,.trail-dots{display:none}.map-caption{bottom:12px}}
+@media(max-width:430px){.journey-node{width:45%;min-height:108px;padding:7px}.journey-node .node-label{font-size:.72rem}.journey-node small{font-size:.55rem}.map-sky{min-height:540px}.journey-node.node-0,.journey-node.node-1{top:16%}.journey-node.node-2,.journey-node.node-3{top:43%}.journey-node.node-4{top:70%}}
 
 /* Explorer profile + challenge screen redesign */
 .explorer-profile{max-width:980px;margin:24px auto;display:grid;grid-template-columns:38% 62%;overflow:hidden;border-radius:28px;background:#fffdf5;border:1px solid #e8d9b6;box-shadow:0 18px 42px #2e422015;min-height:520px}
