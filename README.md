@@ -1,20 +1,29 @@
 # Treasure Quiz — The Lost Treasure of Knowledge
 
-Prototype v0.1 is a static browser game (HTML/CSS/JavaScript). No build step or framework is required.
+Petualangan kuis Bahasa Indonesia untuk siswa kelas 4 (9–10 tahun). Pemain menjelajahi peta bergambar dengan
+lima wilayah, menjawab 35 pertanyaan (7 per wilayah), mengumpulkan poin dan hadiah, lalu menemukan harta karun terakhir.
+
+Live: https://game-ujian.vercel.app
 
 ## Run locally
-Open `index.html` in a modern browser. For best module support, use a simple local static server (or deploy through Vercel).
+Plain static site (no build step). Serve the folder with any static server, e.g. `python3 -m http.server 8123`,
+then open http://127.0.0.1:8123/ . (ES modules need a server; opening `index.html` as a file will not work.)
 
-## Prototype contents
-- Nickname and avatar selection
-- Five-region map (first region playable; other regions are placeholders)
-- 7 provisional Bahasa Indonesia sample questions
-- Correct/wrong feedback, score, sound toggle
-- Local progress save via localStorage
-- Result and answer review
+## Structure
+- `index.html`, `styles.css` — shell and theme
+- `src/main.js` — screens + event handling (single delegated click handler)
+- `src/game.js` — pure game logic: scoring, unlocks, validation/repair of saved data (no DOM)
+- `src/questions.js` — the 35-question bank (not modified by the rebuild)
+- `src/art.js`, `src/audio.js` — inline SVG illustrations and WebAudio sound effects
+- `sw.js` — network-first service worker (new deployments are always picked up when online)
+- `tests/logic.test.mjs` — `node tests/logic.test.mjs`
+- `tests/e2e.py` — Playwright browser suite: `BASE_URL=<url> python3 tests/e2e.py`
 
-## Important
-Question content in `src/questions.js` is provisional sample content. It is not yet checked against the original ASAS source file. Do not use as a final assessment until reviewed.
+## Scoring
+100 points per correct answer, 35 questions, 3,500 maximum. Progress is derived from one record of answers
+(`answers[questionId] = {choice}`), so points are awarded exactly once and unlocks can never get out of sync.
 
-## Stack
-Static HTML/CSS/JS, GitHub source, Vercel deployment. Supabase is deferred until online login/leaderboard is needed.
+## Privacy
+Nickname + emoji avatar only, stored in the browser's localStorage. No accounts, no network calls for data.
+
+See `docs/IMPLEMENTATION_STATE.md` for current status, test results and limitations.
