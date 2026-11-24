@@ -5,7 +5,7 @@ on:
   pull_request:
     branches: [main]
 jobs:
-  syntax:
+  validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -14,11 +14,9 @@ jobs:
           node-version: 22
       - name: Check JavaScript syntax
         run: |
-          node --check src/main.js
-          node --check src/questions.js
+          for f in src/*.js sw.js; do node --check "$f"; done
       - name: Verify required app files
         run: |
-          test -s index.html
-          test -s styles.css
-          test -s src/main.js
-          test -s src/questions.js
+          for f in index.html styles.css sw.js manifest.webmanifest vercel.json src/main.js src/game.js src/questions.js; do test -s "$f"; done
+      - name: Run game-logic tests
+        run: node tests/logic.test.mjs
