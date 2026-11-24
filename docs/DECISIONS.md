@@ -39,3 +39,18 @@
 **Decision:** Use five regions for progression.
 **Reason:** Clear structure and reward milestones.
 **Status:** Accepted; question mapping still draft.
+
+## 2026-11-23 — Rebuild: single-source-of-truth state model
+**Decision:** All progress is derived from one record, `state.answers[questionId] = {choice}`. Score, region status, unlocks and resume position are computed, never stored. Saved data is validated/repaired on every load (`sanitize`), and the legacy v0.2 save is migrated.
+**Reason:** The old model stored `completedRegions`, `totalScore` and `attempts` separately, so stale or inconsistent data produced a blank review screen or a locked Grammar Village. Deriving everything makes points exactly-once and unlocks consistent by construction.
+**Status:** Accepted, implemented, tested.
+
+## 2026-11-23 — Network-first service worker
+**Decision:** The service worker is network-first with a versioned cache used only offline; `sw.js` is served with `no-cache`; the page reloads once when a new worker takes control.
+**Reason:** The old cache-first worker could keep serving outdated assets indefinitely and answered failed JS/CSS requests with `index.html`.
+**Status:** Accepted, implemented, tested (including old-to-new upgrade).
+
+## 2026-11-23 — Indonesian UI copy, English region names
+**Decision:** Interface text is Bahasa Indonesia (matching the question bank and the students); the five region names and reward names stay in English as in the blueprint.
+**Status:** Accepted.
+
